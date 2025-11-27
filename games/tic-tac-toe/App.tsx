@@ -11,21 +11,21 @@ type View = 'LANDING' | 'MODE_SELECT' | 'ONLINE_MENU' | 'CREATE_ROOM' | 'JOIN_RO
 
 function App() {
   // --- State ---
-  const [view, setView] = useState<View>('LANDING');
-  const [gameMode, setGameMode] = useState<GameMode>('SINGLE');
+  const [view, setViewState] = useState<View>('LANDING');
+  const [gameMode, setGameModeState] = useState<GameMode>('SINGLE');
   const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  
+
   // Game State
-  const [board, setBoard] = useState<CellValue[]>(EMPTY_BOARD);
-  const [currentTurn, setCurrentTurn] = useState<PlayerSymbol>('X');
+  const [board, setBoardState] = useState<CellValue[]>(EMPTY_BOARD);
+  const [currentTurn, setCurrentTurnState] = useState<PlayerSymbol>('X');
   const [winner, setWinner] = useState<PlayerSymbol | 'draw' | null>(null);
   const [winningLine, setWinningLine] = useState<number[] | null>(null);
-  
+
   // Players
   const [player1Name, setPlayer1Name] = useState('Player 1');
   const [player2Name, setPlayer2Name] = useState('Player 2'); // Or AI
-  
+
   // Online Specific
   const [roomCode, setRoomCode] = useState('');
   const [mySymbol, setMySymbol] = useState<PlayerSymbol | null>(null);
@@ -36,10 +36,60 @@ function App() {
   // Scores
   const [score, setScore] = useState({ X: 0, O: 0, Draws: 0 });
 
-  // Refs for cleanup
+  // Refs for cleanup and stale closure prevention
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
+  const hasTransitionedToGameRef = useRef<boolean>(false);
+
+  // FIX 3: Add refs to prevent stale closures in Firebase callbacks
+  const viewRef = useRef<View>(view);
+  const boardRef = useRef<CellValue[]>(board);
+  const currentTurnRef = useRef<PlayerSymbol>(currentTurn);
+
+  // Wrapped state setters with logging
+  const setView = (newView: View | ((prev: View) => View)) => {
+    const actualNewView = typeof newView === 'function' ? newView(view) : newView;
+    console.log('🔄 VIEW CHANGE:', view, '→', actualNewView, '| Stack:', new Error().stack?.split('\n')[2]);
+    setViewState(newView);
+  };
+
+  const setGameMode = (newMode: GameMode) => {
+    console.log('🎮 GAME MODE CHANGE:', gameMode, '→', newMode);
+    setGameModeState(newMode);
+  };
+
+  const setBoard = (newBoard: CellValue[] | ((prev: CellValue[]) => CellValue[])) => {
+    const actualNewBoard = typeof newBoard === 'function' ? newBoard(board) : newBoard;
+    console.log('📋 BOARD UPDATE:', board, '→', actualNewBoard);
+    setBoardState(newBoard);
+  };
+
+  const setCurrentTurn = (newTurn: PlayerSymbol) => {
+    console.log('👉 TURN CHANGE:', currentTurn, '→', newTurn);
+    setCurrentTurnState(newTurn);
+  };
 
   // --- Effects ---
+
+  // Update refs on every render to prevent stale closures
+  useEffect(() => {
+    viewRef.current = view;
+    boardRef.current = board;
+    currentTurnRef.current = currentTurn;
+  });
+
+  // Log every render
+  useEffect(() => {
+    console.log('🔁 RENDER:', {
+      view,
+      gameMode,
+      mySymbol,
+      roomCode,
+      opponentConnected,
+      currentTurn,
+      boardLength: board.filter(c => c !== null).length,
+      winner
+    });
+  });
 
   // Load settings
   useEffect(() => {
@@ -78,48 +128,98 @@ function App() {
   // Online Room Subscription
   useEffect(() => {
     if (gameMode === 'ONLINE' && roomCode) {
+      console.log('🔥 Setting up Firebase subscription for room:', roomCode, 'My symbol:', mySymbol);
+
       unsubscribeRoomRef.current = subscribeToRoom(roomCode, (data: RoomData) => {
-        // Sync Board & Turn
-        setBoard(data.board || EMPTY_BOARD);
-        setCurrentTurn(data.currentTurn);
-        
+        console.log('📡 Firebase update received:', data);
+
+        // FIX 1 & 2: Use functional setState for ALL state updates to prevent stale state issues
+        setBoardState(prevBoard => {
+          console.log('📋 Firebase board update - prev:', prevBoard, 'new:', data.board || EMPTY_BOARD);
+          return data.board || EMPTY_BOARD;
+        });
+
+        setCurrentTurnState(prevTurn => {
+          console.log('👉 Firebase turn update - prev:', prevTurn, 'new:', data.currentTurn);
+          return data.currentTurn;
+        });
+
         // Check for player connection status
         const isP1 = mySymbol === 'X';
         const opponent = isP1 ? data.players.player2 : data.players.player1;
+        const me = isP1 ? data.players.player1 : data.players.player2;
+
         setOpponentConnected(opponent.joined);
+
+        // Sync player names
+        if (isP1) {
+          setPlayer2Name(opponent.joined ? opponent.name : 'Waiting...');
+        } else {
+          setPlayer1Name(data.players.player1.name);
+          setPlayer2Name(me.name);
+        }
 
         // Sync Winner
         if (data.winner) {
            setWinner(data.winner as any);
            if (data.winner !== 'draw') {
               // Recalculate line locally for visual
-              const res = checkGameStatus(data.board || EMPTY_BOARD);
-              if (res) setWinningLine(res.line);
+              for (const combo of WINNING_COMBINATIONS) {
+                const [a, b, c] = combo;
+                if (data.board[a] && data.board[a] === data.board[b] && data.board[a] === data.board[c]) {
+                  setWinningLine(combo);
+                  break;
+                }
+              }
+           } else {
+              setWinningLine(null);
            }
         } else {
             setWinner(null);
             setWinningLine(null);
         }
 
+        // FIX 4: CRITICAL - Do NOT call setView from Firebase callback during gameplay!
         // Auto-start game if waiting in lobby and opponent joins
-        if (view === 'LOBBY' && data.players.player2.joined) {
-           // Transition to game
-           setTimeout(() => setView('GAME'), 1000);
+        // Only transition once to avoid repeated calls
+        // We use viewRef to check current view instead of closure value
+        if (!hasTransitionedToGameRef.current && data.players.player2.joined) {
+          console.log('🎮 Player 2 joined! Checking if we should transition to game...');
+          // Only transition if we're still in LOBBY view
+          // This check happens in the ref to avoid stale closure
+          hasTransitionedToGameRef.current = true;
+          setTimeout(() => {
+            // Use the wrapper function to properly transition
+            setView((currentView) => {
+              console.log('🔄 Auto-transition check - current view:', currentView);
+              if (currentView === 'LOBBY') {
+                console.log('✅ Transitioning from LOBBY to GAME');
+                return 'GAME';
+              }
+              console.log('⏭️ Skipping transition - not in LOBBY');
+              return currentView;
+            });
+          }, 500);
         }
-        
+
         // Handle opponent disconnect during game
-        if (view === 'GAME' && !opponent.joined && !data.winner) {
-            setErrorMsg("Opponent disconnected");
-        } else {
-            setErrorMsg("");
-        }
+        setErrorMsg(prevError => {
+          // Don't override errors if game is already over
+          if (data.winner) return "";
+          if (!opponent.joined) return "Opponent disconnected";
+          return "";
+        });
       });
     }
 
     return () => {
-      if (unsubscribeRoomRef.current) unsubscribeRoomRef.current();
+      if (unsubscribeRoomRef.current) {
+        console.log('🔌 Unsubscribing from room');
+        unsubscribeRoomRef.current();
+        unsubscribeRoomRef.current = null;
+      }
     };
-  }, [gameMode, roomCode, mySymbol, view, checkGameStatus]);
+  }, [gameMode, roomCode, mySymbol]); // FIX 5: Minimal dependencies only
 
   // End Game Sound & Score Update
   useEffect(() => {
@@ -151,21 +251,25 @@ function App() {
   };
 
   const startGame = (mode: GameMode) => {
+    console.log('🎮 START GAME CALLED with mode:', mode);
     playSound('click');
     setGameMode(mode);
     setScore({ X: 0, O: 0, Draws: 0 });
-    
+
     if (mode === 'SINGLE') {
+      console.log('🤖 Starting SINGLE player mode');
       setPlayer1Name("You");
       setPlayer2Name(`AI (${difficulty})`);
       resetBoard();
       setMySymbol('X'); // Player is always X in single player for simplicity here
       setView('GAME');
     } else if (mode === 'LOCAL') {
+      console.log('👥 Starting LOCAL multiplayer mode');
       setView('MODE_SELECT'); // Goes to sub-options for local setup if needed, but per spec:
-      // Spec says "Two Player" -> Sub Option. 
+      // Spec says "Two Player" -> Sub Option.
       // Let's assume user clicked "Two Player" on landing.
     } else {
+      console.log('🌐 ONLINE mode - no immediate action');
       // ONLINE
     }
   };
@@ -182,33 +286,41 @@ function App() {
 
     // Enforce Turn for Online
     if (gameMode === 'ONLINE') {
-        if (currentTurn !== mySymbol) return;
-        if (!opponentConnected) return; 
+        if (currentTurn !== mySymbol) {
+          console.log('❌ Not your turn! Current:', currentTurn, 'Your symbol:', mySymbol);
+          return;
+        }
+        if (!opponentConnected) {
+          console.log('❌ Opponent not connected');
+          return;
+        }
     }
 
     if (soundEnabled) playSound('move');
 
     const newBoard = [...board];
     newBoard[index] = currentTurn;
-    
-    // Local Optimistic Update (will be overwritten by DB in online, but feels snappier)
-    setBoard(newBoard);
 
     // Check Win
     const result = checkGameStatus(newBoard);
     const nextTurn = currentTurn === 'X' ? 'O' : 'X';
-    
-    if (result) {
+
+    console.log('🎯 Making move at index', index, 'Current turn:', currentTurn, 'Next turn:', nextTurn);
+
+    if (gameMode === 'ONLINE') {
+      // For online mode, ONLY update Firebase - let the listener update local state
+      console.log('🔥 Updating Firebase with new move...');
+      await updateGameState(roomCode, newBoard, nextTurn, result ? result.winner as any : null);
+      console.log('✅ Firebase updated successfully');
+    } else {
+      // For local/single player, update state directly
+      setBoard(newBoard);
+      if (result) {
         setWinner(result.winner as PlayerSymbol | 'draw');
         setWinningLine(result.line);
-        if (gameMode === 'ONLINE') {
-            await updateGameState(roomCode, newBoard, nextTurn, result.winner as any);
-        }
-    } else {
+      } else {
         setCurrentTurn(nextTurn);
-        if (gameMode === 'ONLINE') {
-            await updateGameState(roomCode, newBoard, nextTurn, null);
-        }
+      }
     }
   };
 
@@ -218,7 +330,10 @@ function App() {
       const code = await createRoom(player1Name || 'Player 1');
       setRoomCode(code);
       setMySymbol('X');
+      setGameMode('ONLINE'); // Set game mode to ONLINE
       setPlayer2Name("Waiting...");
+      resetBoard(); // Reset the board
+      hasTransitionedToGameRef.current = false; // Reset transition flag
       setView('LOBBY');
     } catch (e) {
       alert("Error creating room. Check connection.");
@@ -233,16 +348,20 @@ function App() {
         return;
     }
     setIsProcessing(true);
+    setErrorMsg(""); // Clear any previous errors
     try {
         const success = await joinRoom(roomCode, player1Name || 'Player 2');
         if (success) {
             setMySymbol('O');
-            setView('GAME'); // Should wait for sync, but view switch is fine
+            setGameMode('ONLINE'); // Set game mode to ONLINE
+            resetBoard(); // Reset the board
+            setView('GAME'); // Go directly to game view
         } else {
             setErrorMsg("Room not found or full");
         }
     } catch (e) {
         setErrorMsg("Connection error");
+        console.error("Join room error:", e);
     }
     setIsProcessing(false);
   };
@@ -258,6 +377,8 @@ function App() {
   };
 
   const goBack = () => {
+      console.log('⬅️ GO BACK CALLED! Current view:', view, 'Current mode:', gameMode);
+      console.trace('GO BACK STACK TRACE');
       playSound('click');
       if (view === 'GAME' || view === 'LOBBY') {
           if (gameMode === 'ONLINE') {
@@ -428,7 +549,8 @@ function App() {
   }
 
   // GAME VIEW
-  return (
+  if (view === 'GAME') {
+    return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
         {/* Header */}
         <div className="w-full max-w-md flex justify-between items-center mb-8">
@@ -445,10 +567,13 @@ function App() {
         <div className="w-full max-w-md aspect-square mb-8">
              <div className="grid grid-cols-3 gap-3 p-3 glass-panel rounded-2xl h-full">
                  {board.map((cell, idx) => (
-                     <Square 
-                        key={idx} 
-                        value={cell} 
-                        onClick={() => handleMove(idx)}
+                     <Square
+                        key={idx}
+                        value={cell}
+                        onClick={() => {
+                          console.log('🖱️ SQUARE CLICKED:', idx, 'Current view:', view, 'Game mode:', gameMode);
+                          handleMove(idx);
+                        }}
                         disabled={!!cell || !!winner || (gameMode === 'ONLINE' && currentTurn !== mySymbol) || (gameMode === 'SINGLE' && currentTurn === 'O')}
                         isWinningSquare={winningLine?.includes(idx) ?? false}
                      />
@@ -482,6 +607,21 @@ function App() {
                 </button>
             )}
         </div>
+    </div>
+    );
+  }
+
+  // Fallback for unexpected view states
+  console.error('🚨 CRITICAL: Unknown view state:', view);
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="glass-panel p-8 rounded-2xl text-center">
+        <h2 className="text-2xl font-bold text-red-400 mb-4">Error: Unknown View State</h2>
+        <p className="text-gray-300 mb-4">View: {view}</p>
+        <button onClick={() => setView('LANDING')} className="px-6 py-3 bg-accent text-background rounded-lg font-bold">
+          Return to Home
+        </button>
+      </div>
     </div>
   );
 }

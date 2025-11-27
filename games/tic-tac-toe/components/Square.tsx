@@ -9,6 +9,12 @@ interface SquareProps {
 }
 
 const Square: React.FC<SquareProps> = ({ value, onClick, disabled, isWinningSquare }) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // FIX 6: Prevent event bubbling to ensure click events don't propagate
+    e.stopPropagation();
+    onClick();
+  };
+
   return (
     <button
       className={`
@@ -18,7 +24,7 @@ const Square: React.FC<SquareProps> = ({ value, onClick, disabled, isWinningSqua
         ${isWinningSquare ? 'bg-accent/20 border-accent text-accent shadow-[0_0_20px_rgba(46,204,113,0.4)]' : 'bg-white/5 border-white/10 text-white shadow-inner'}
         border-2
       `}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
     >
       <span className={`transform transition-all duration-300 ${value ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
