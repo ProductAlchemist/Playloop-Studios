@@ -277,7 +277,7 @@ function App() {
     playSound('click');
   };
 
-  const startGame = async (mode: GameMode) => {
+  const startGame = async (mode: GameMode, difficultyOverride?: Difficulty) => {
     console.log('🎮 START GAME CALLED with mode:', mode);
     playSound('click');
     setGameMode(mode);
@@ -294,8 +294,10 @@ function App() {
 
     if (mode === 'SINGLE') {
       console.log('🤖 Starting SINGLE player mode');
+      // FIX BUG 3: Use difficultyOverride if provided to avoid stale state
+      const currentDifficulty = difficultyOverride || difficulty;
       setPlayer1Name("You");
-      setPlayer2Name(`AI (${difficulty})`);
+      setPlayer2Name(`AI (${currentDifficulty})`);
       resetBoard();
       setMySymbol('X'); // Player is always X in single player for simplicity here
       setView('GAME');
@@ -491,8 +493,8 @@ function App() {
         <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
 
         {/* Footer */}
-        <div className="absolute bottom-4 text-center">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+        <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span>Built by ProductAlchemist</span>
             <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
               <GitHubIcon className="inline-block" />
@@ -516,7 +518,7 @@ function App() {
                 {(['EASY', 'MEDIUM', 'HARD'] as Difficulty[]).map(diff => (
                     <button
                         key={diff}
-                        onClick={() => { handleDifficultyChange(diff); startGame('SINGLE'); }}
+                        onClick={() => { handleDifficultyChange(diff); startGame('SINGLE', diff); }}
                         className={`w-full py-4 rounded-xl border transition-all ${difficulty === diff ? 'bg-accent text-background border-accent font-bold' : 'glass-panel border-white/10 text-gray-300 hover:bg-white/10'}`}
                     >
                         {diff}
@@ -524,8 +526,8 @@ function App() {
                 ))}
             </div>
             {/* Footer */}
-            <div className="absolute bottom-4 text-center">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <span>Built by ProductAlchemist</span>
                 <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
                   <GitHubIcon className="inline-block" />
@@ -568,8 +570,8 @@ function App() {
           </div>
 
           {/* Footer */}
-          <div className="absolute bottom-4 text-center">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
               <span>Built by ProductAlchemist</span>
               <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
                 <GitHubIcon className="inline-block" />
@@ -717,7 +719,7 @@ function App() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 mb-6 text-center px-4">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span>Built by ProductAlchemist</span>
             <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
