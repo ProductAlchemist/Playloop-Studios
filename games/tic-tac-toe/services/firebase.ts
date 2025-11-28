@@ -152,3 +152,18 @@ export const getVisitorCount = async (): Promise<number> => {
   const snapshot = await get(visitorRef);
   return snapshot.exists() ? snapshot.val() : 0;
 };
+
+export const incrementGamesPlayed = async (): Promise<void> => {
+  if (!db) throw new Error("Database not initialized");
+  const gamesRef = ref(db, 'gamesPlayed');
+  const snapshot = await get(gamesRef);
+  const currentCount = snapshot.exists() ? snapshot.val() : 0;
+  await set(gamesRef, currentCount + 1);
+};
+
+export const getGamesPlayed = async (): Promise<number> => {
+  if (!db) throw new Error("Database not initialized");
+  const gamesRef = ref(db, 'gamesPlayed');
+  const snapshot = await get(gamesRef);
+  return snapshot.exists() ? snapshot.val() : 0;
+};

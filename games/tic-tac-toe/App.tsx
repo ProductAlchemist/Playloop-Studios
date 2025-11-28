@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameMode, Difficulty, PlayerSymbol, CellValue, GameStatus, RoomData } from './types';
 import { WINNING_COMBINATIONS, EMPTY_BOARD } from './constants';
 import { getBestMove } from './services/ai';
-import { createRoom, joinRoom, subscribeToRoom, updateGameState, leaveRoom, incrementVisitorCount, getVisitorCount } from './services/firebase';
+import { createRoom, joinRoom, subscribeToRoom, updateGameState, leaveRoom, incrementVisitorCount, getVisitorCount, incrementGamesPlayed, getGamesPlayed } from './services/firebase';
 import { playSound } from './utils/sound';
 import Square from './components/Square';
-import { UserIcon, UsersIcon, GlobeIcon, CopyIcon, Volume2Icon, VolumeXIcon, ArrowLeftIcon, RefreshCwIcon } from './components/Icons';
+import { UserIcon, UsersIcon, GlobeIcon, CopyIcon, Volume2Icon, VolumeXIcon, ArrowLeftIcon, RefreshCwIcon, GitHubIcon, LinkedInIcon } from './components/Icons';
 
 type View = 'LANDING' | 'MODE_SELECT' | 'ONLINE_MENU' | 'CREATE_ROOM' | 'JOIN_ROOM' | 'LOBBY' | 'GAME';
 
@@ -36,8 +36,9 @@ function App() {
   // Scores
   const [score, setScore] = useState({ X: 0, O: 0, Draws: 0 });
 
-  // Visitor Counter
+  // Counters
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [gamesPlayedCount, setGamesPlayedCount] = useState<number | null>(null);
 
   // Coming Soon Modal
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
@@ -105,19 +106,24 @@ function App() {
     if (savedSound) setSoundEnabled(savedSound === 'true');
   }, []);
 
-  // Visitor Counter - Increment on mount
+  // Counters - Load on mount
   useEffect(() => {
-    const initVisitorCount = async () => {
+    const initCounters = async () => {
       try {
+        // Increment visitor count
         await incrementVisitorCount();
-        const count = await getVisitorCount();
-        setVisitorCount(count);
+        const visitors = await getVisitorCount();
+        setVisitorCount(visitors);
+
+        // Load games played count (don't increment yet)
+        const gamesPlayed = await getGamesPlayed();
+        setGamesPlayedCount(gamesPlayed);
       } catch (error) {
-        console.error('Failed to track visitor:', error);
-        // Fail silently - don't show counter if Firebase fails
+        console.error('Failed to load counters:', error);
+        // Fail silently - don't show counters if Firebase fails
       }
     };
-    initVisitorCount();
+    initCounters();
   }, []);
 
   // Check Win/Draw
@@ -271,11 +277,20 @@ function App() {
     playSound('click');
   };
 
-  const startGame = (mode: GameMode) => {
+  const startGame = async (mode: GameMode) => {
     console.log('🎮 START GAME CALLED with mode:', mode);
     playSound('click');
     setGameMode(mode);
     setScore({ X: 0, O: 0, Draws: 0 });
+
+    // Increment games played counter when game actually starts
+    try {
+      await incrementGamesPlayed();
+      const count = await getGamesPlayed();
+      setGamesPlayedCount(count);
+    } catch (error) {
+      console.error('Failed to increment games played:', error);
+    }
 
     if (mode === 'SINGLE') {
       console.log('🤖 Starting SINGLE player mode');
@@ -435,14 +450,17 @@ function App() {
   if (view === 'LANDING') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
-        <div className="absolute top-4 right-4 cursor-pointer p-2 rounded-full hover:bg-white/10" onClick={handleSoundToggle}>
-             {soundEnabled ? <Volume2Icon className="text-accent" /> : <VolumeXIcon className="text-gray-400" />}
-        </div>
-
-        {/* Visitor Counter */}
+        {/* Visitor Counter - Top Left */}
         {visitorCount !== null && (
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-gray-500 text-xs">
-            👁️ {visitorCount.toLocaleString()} visitors
+          <div className="absolute top-4 left-4 glass-panel px-3 py-1.5 rounded-full text-xs text-gray-300">
+            👥 {visitorCount.toLocaleString()} visitors
+          </div>
+        )}
+
+        {/* Games Played Counter - Top Right */}
+        {gamesPlayedCount !== null && (
+          <div className="absolute top-4 right-4 glass-panel px-3 py-1.5 rounded-full text-xs text-gray-300">
+            🎮 {gamesPlayedCount.toLocaleString()} games played
           </div>
         )}
 
@@ -466,8 +484,17 @@ function App() {
         <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
 
         {/* Footer */}
-        <div className="absolute bottom-4 text-center text-xs text-gray-600">
-          Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+        <div className="absolute bottom-4 text-center">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <span>Built by ProductAlchemist</span>
+            <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+              <GitHubIcon className="inline-block" />
+            </a>
+            <span className="text-gray-600">|</span>
+            <a href="https://www.linkedin.com/in/kshitijkulkarni-productmanager/" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+              <LinkedInIcon className="inline-block" />
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -490,8 +517,17 @@ function App() {
                 ))}
             </div>
             {/* Footer */}
-            <div className="absolute bottom-4 text-center text-xs text-gray-600">
-              Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+            <div className="absolute bottom-4 text-center">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span>Built by ProductAlchemist</span>
+                <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+                  <GitHubIcon className="inline-block" />
+                </a>
+                <span className="text-gray-600">|</span>
+                <a href="https://www.linkedin.com/in/kshitijkulkarni-productmanager/" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+                  <LinkedInIcon className="inline-block" />
+                </a>
+              </div>
             </div>
           </div>
       )
@@ -525,8 +561,17 @@ function App() {
           </div>
 
           {/* Footer */}
-          <div className="absolute bottom-4 text-center text-xs text-gray-600">
-            Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+          <div className="absolute bottom-4 text-center">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span>Built by ProductAlchemist</span>
+              <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+                <GitHubIcon className="inline-block" />
+              </a>
+              <span className="text-gray-600">|</span>
+              <a href="https://www.linkedin.com/in/kshitijkulkarni-productmanager/" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+                <LinkedInIcon className="inline-block" />
+              </a>
+            </div>
           </div>
 
           {/* Coming Soon Modal */}
@@ -665,8 +710,17 @@ function App() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-xs text-gray-600">
-          Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+        <div className="mt-8 text-center">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+            <span>Built by ProductAlchemist</span>
+            <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+              <GitHubIcon className="inline-block" />
+            </a>
+            <span className="text-gray-600">|</span>
+            <a href="https://www.linkedin.com/in/kshitijkulkarni-productmanager/" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
+              <LinkedInIcon className="inline-block" />
+            </a>
+          </div>
         </div>
     </div>
     );
