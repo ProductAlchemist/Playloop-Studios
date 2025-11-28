@@ -301,9 +301,10 @@ function App() {
       setView('GAME');
     } else if (mode === 'LOCAL') {
       console.log('👥 Starting LOCAL multiplayer mode');
-      setView('MODE_SELECT'); // Goes to sub-options for local setup if needed, but per spec:
-      // Spec says "Two Player" -> Sub Option.
-      // Let's assume user clicked "Two Player" on landing.
+      // FIX BUG 1 & 2: Reset board and go directly to GAME for local multiplayer
+      resetBoard();
+      setMySymbol('X');
+      setView('GAME');
     } else {
       console.log('🌐 ONLINE mode - no immediate action');
       // ONLINE
@@ -405,8 +406,14 @@ function App() {
   const handlePlayAgain = async () => {
       playSound('click');
       resetBoard();
+
+      // FIX BUG 3: Update AI player name when playing again in single player mode
+      if (gameMode === 'SINGLE') {
+          setPlayer2Name(`AI (${difficulty})`);
+      }
+
       if (gameMode === 'ONLINE') {
-          // In a real app, we'd need a handshake "request restart". 
+          // In a real app, we'd need a handshake "request restart".
           // For simplicity, whoever clicks play again resets the board for both.
           await updateGameState(roomCode, EMPTY_BOARD, 'X', null);
       }
@@ -452,15 +459,15 @@ function App() {
       <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
         {/* Visitor Counter - Top Left */}
         {visitorCount !== null && (
-          <div className="absolute top-4 left-4 glass-panel px-3 py-1.5 rounded-full text-xs text-gray-300">
-            👥 {visitorCount.toLocaleString()} visitors
+          <div className="absolute top-4 left-2 sm:left-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
+            👥 <span className="hidden xs:inline">{visitorCount.toLocaleString()} visitors</span><span className="xs:hidden">{visitorCount.toLocaleString()}</span>
           </div>
         )}
 
         {/* Games Played Counter - Top Right */}
         {gamesPlayedCount !== null && (
-          <div className="absolute top-4 right-4 glass-panel px-3 py-1.5 rounded-full text-xs text-gray-300">
-            🎮 {gamesPlayedCount.toLocaleString()} games played
+          <div className="absolute top-4 right-2 sm:right-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
+            🎮 <span className="hidden xs:inline">{gamesPlayedCount.toLocaleString()} games</span><span className="xs:hidden">{gamesPlayedCount.toLocaleString()}</span>
           </div>
         )}
 
@@ -546,7 +553,7 @@ function App() {
                 <div className="space-y-3">
                     <input value={player1Name} onChange={e => setPlayer1Name(e.target.value)} placeholder="Player 1 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
                     <input value={player2Name} onChange={e => setPlayer2Name(e.target.value)} placeholder="Player 2 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
-                    <button onClick={() => { setGameMode('LOCAL'); startGame('LOCAL'); setView('GAME'); }} className="w-full bg-accent text-background font-bold py-3 rounded-lg hover:brightness-110 transition-all">Start Local Game</button>
+                    <button onClick={() => { setGameMode('LOCAL'); startGame('LOCAL'); }} className="w-full bg-accent text-background font-bold py-3 rounded-lg hover:brightness-110 transition-all">Start Local Game</button>
                 </div>
             </div>
 
