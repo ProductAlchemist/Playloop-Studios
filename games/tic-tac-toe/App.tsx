@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameMode, Difficulty, PlayerSymbol, CellValue, GameStatus, RoomData } from './types';
 import { WINNING_COMBINATIONS, EMPTY_BOARD } from './constants';
 import { getBestMove } from './services/ai';
-import { createRoom, joinRoom, subscribeToRoom, updateGameState, leaveRoom } from './services/firebase';
+import { createRoom, joinRoom, subscribeToRoom, updateGameState, leaveRoom, incrementVisitorCount, getVisitorCount } from './services/firebase';
 import { playSound } from './utils/sound';
 import Square from './components/Square';
 import { UserIcon, UsersIcon, GlobeIcon, CopyIcon, Volume2Icon, VolumeXIcon, ArrowLeftIcon, RefreshCwIcon } from './components/Icons';
@@ -35,6 +35,12 @@ function App() {
 
   // Scores
   const [score, setScore] = useState({ X: 0, O: 0, Draws: 0 });
+
+  // Visitor Counter
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+
+  // Coming Soon Modal
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   // Refs for cleanup and stale closure prevention
   const unsubscribeRoomRef = useRef<(() => void) | null>(null);
@@ -97,6 +103,21 @@ function App() {
     const savedSound = localStorage.getItem('soundEnabled');
     if (savedDiff) setDifficulty(savedDiff as Difficulty);
     if (savedSound) setSoundEnabled(savedSound === 'true');
+  }, []);
+
+  // Visitor Counter - Increment on mount
+  useEffect(() => {
+    const initVisitorCount = async () => {
+      try {
+        await incrementVisitorCount();
+        const count = await getVisitorCount();
+        setVisitorCount(count);
+      } catch (error) {
+        console.error('Failed to track visitor:', error);
+        // Fail silently - don't show counter if Firebase fails
+      }
+    };
+    initVisitorCount();
   }, []);
 
   // Check Win/Draw
@@ -418,6 +439,13 @@ function App() {
              {soundEnabled ? <Volume2Icon className="text-accent" /> : <VolumeXIcon className="text-gray-400" />}
         </div>
 
+        {/* Visitor Counter */}
+        {visitorCount !== null && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-gray-500 text-xs">
+            👁️ {visitorCount.toLocaleString()} visitors
+          </div>
+        )}
+
         <div className="text-center mb-12 animate-scale-in">
           <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 mb-2 drop-shadow-lg">Tic Tac Toe</h1>
           <p className="text-gray-400 text-sm tracking-widest uppercase">By PlayLoop Studios</p>
@@ -428,14 +456,19 @@ function App() {
             <UserIcon className="w-8 h-8 text-accent group-hover:text-white transition-colors" />
             <span className="text-xl font-semibold">Single Player</span>
           </button>
-          
+
           <button onClick={() => setView('ONLINE_MENU')} className="w-full glass-panel py-5 rounded-2xl flex items-center justify-center space-x-4 hover:bg-white/10 transition-all hover:scale-105 group">
             <UsersIcon className="w-8 h-8 text-cyan-400 group-hover:text-white transition-colors" />
             <span className="text-xl font-semibold">Two Player</span>
           </button>
         </div>
-        
+
         <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
+
+        {/* Footer */}
+        <div className="absolute bottom-4 text-center text-xs text-gray-600">
+          Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+        </div>
       </div>
     );
   }
@@ -447,7 +480,7 @@ function App() {
             <h2 className="text-3xl font-bold mb-8">Select Difficulty</h2>
             <div className="space-y-4 w-full max-w-xs">
                 {(['EASY', 'MEDIUM', 'HARD'] as Difficulty[]).map(diff => (
-                    <button 
+                    <button
                         key={diff}
                         onClick={() => { handleDifficultyChange(diff); startGame('SINGLE'); }}
                         className={`w-full py-4 rounded-xl border transition-all ${difficulty === diff ? 'bg-accent text-background border-accent font-bold' : 'glass-panel border-white/10 text-gray-300 hover:bg-white/10'}`}
@@ -455,6 +488,10 @@ function App() {
                         {diff}
                     </button>
                 ))}
+            </div>
+            {/* Footer */}
+            <div className="absolute bottom-4 text-center text-xs text-gray-600">
+              Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
             </div>
           </div>
       )
@@ -465,9 +502,9 @@ function App() {
         <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
           <button onClick={() => setView('LANDING')} className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/10"><ArrowLeftIcon /></button>
           <h2 className="text-3xl font-bold mb-10">Two Player Mode</h2>
-          
+
           <div className="w-full max-w-md space-y-6">
-            {/* Local */}
+            {/* Local - KEEP THIS WORKING */}
             <div className="glass-panel p-6 rounded-2xl">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><UsersIcon className="w-5 h-5 text-accent"/> Same Device</h3>
                 <div className="space-y-3">
@@ -477,15 +514,34 @@ function App() {
                 </div>
             </div>
 
-            {/* Online */}
+            {/* Online - SHOW COMING SOON MODAL */}
             <div className="glass-panel p-6 rounded-2xl">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><GlobeIcon className="w-5 h-5 text-cyan-400"/> Play Online</h3>
                 <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => { setView('CREATE_ROOM'); setPlayer1Name("Player 1"); }} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Create Room</button>
-                    <button onClick={() => { setView('JOIN_ROOM'); setPlayer1Name("Player 2"); }} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Join Room</button>
+                    <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Create Room</button>
+                    <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Join Room</button>
                 </div>
             </div>
           </div>
+
+          {/* Footer */}
+          <div className="absolute bottom-4 text-center text-xs text-gray-600">
+            Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
+          </div>
+
+          {/* Coming Soon Modal */}
+          {showComingSoonModal && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6" onClick={() => setShowComingSoonModal(false)}>
+              <div className="glass-panel p-8 rounded-3xl max-w-sm w-full text-center animate-scale-in" onClick={e => e.stopPropagation()}>
+                <div className="text-5xl mb-4">🚀</div>
+                <h3 className="text-2xl font-bold mb-3">Online Multiplayer Coming Soon!</h3>
+                <p className="text-gray-400 mb-6">We're working on it. Stay tuned!</p>
+                <button onClick={() => setShowComingSoonModal(false)} className="w-full bg-accent text-background font-bold py-3 rounded-lg hover:brightness-110 transition-all">
+                  Can't wait!
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )
   }
@@ -599,13 +655,18 @@ function App() {
             </div>
 
             {winner && (
-                <button 
+                <button
                     onClick={handlePlayAgain}
                     className="w-full py-4 bg-accent text-background font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(46,204,113,0.4)] animate-pulse-slow hover:scale-[1.02] transition-transform"
                 >
                     Play Again
                 </button>
             )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center text-xs text-gray-600">
+          Built by <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">ProductAlchemist</a> | <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-accent transition-colors">View on GitHub</a>
         </div>
     </div>
     );

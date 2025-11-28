@@ -136,3 +136,19 @@ export const leaveRoom = async (code: string, isPlayer1: boolean) => {
   updates[`rooms/${code}/players/${playerKey}/joined`] = false;
   await update(ref(db), updates);
 };
+
+// Visitor Counter Functions
+export const incrementVisitorCount = async (): Promise<void> => {
+  if (!db) throw new Error("Database not initialized");
+  const visitorRef = ref(db, 'visitorCount');
+  const snapshot = await get(visitorRef);
+  const currentCount = snapshot.exists() ? snapshot.val() : 0;
+  await set(visitorRef, currentCount + 1);
+};
+
+export const getVisitorCount = async (): Promise<number> => {
+  if (!db) throw new Error("Database not initialized");
+  const visitorRef = ref(db, 'visitorCount');
+  const snapshot = await get(visitorRef);
+  return snapshot.exists() ? snapshot.val() : 0;
+};
