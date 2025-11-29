@@ -94,7 +94,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1C295A] to-[#0E1B3E] text-white flex flex-col items-center justify-center p-4 relative">
+    <div className="min-h-screen w-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1C295A] to-[#0E1B3E] text-white flex flex-col p-4">
 
       {/* Visitor Counter - Top Left */}
       {visitorCount !== null && (
@@ -110,8 +110,10 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Header / HUD */}
-      <div className="w-full max-w-[600px] flex justify-between items-center mb-6 z-10">
+      {/* Main Content - Centered */}
+      <div className="flex-1 flex flex-col items-center justify-center">
+        {/* Header / HUD */}
+        <div className="w-full max-w-[600px] flex justify-between items-center mb-6 z-10">
         <div className="flex flex-col">
           <h1 className="text-2xl font-bold tracking-tight text-[#2ECC71]">SNAKE</h1>
           <span className="text-xs text-blue-200 opacity-60">by PlayLoop</span>
@@ -238,26 +240,27 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Desktop Controls Hint */}
-      <div className="mt-8 hidden md:flex items-center gap-8 text-white/20 text-sm font-medium select-none">
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-8 h-8 rounded border border-current flex items-center justify-center">↑</div>
-          <div className="flex gap-1">
-            <div className="w-8 h-8 rounded border border-current flex items-center justify-center">←</div>
-            <div className="w-8 h-8 rounded border border-current flex items-center justify-center">↓</div>
-            <div className="w-8 h-8 rounded border border-current flex items-center justify-center">→</div>
+        {/* Desktop Controls Hint */}
+        <div className="mt-8 hidden md:flex items-center gap-8 text-white/20 text-sm font-medium select-none">
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-8 h-8 rounded border border-current flex items-center justify-center">↑</div>
+            <div className="flex gap-1">
+              <div className="w-8 h-8 rounded border border-current flex items-center justify-center">←</div>
+              <div className="w-8 h-8 rounded border border-current flex items-center justify-center">↓</div>
+              <div className="w-8 h-8 rounded border border-current flex items-center justify-center">→</div>
+            </div>
+            <span className="mt-1">Move</span>
           </div>
-          <span className="mt-1">Move</span>
-        </div>
-        <div className="h-12 w-px bg-white/10"></div>
-        <div className="flex flex-col items-center gap-2">
-           <div className="px-3 py-1 border border-current rounded text-xs">SPACE</div>
-           <span>Pause</span>
+          <div className="h-12 w-px bg-white/10"></div>
+          <div className="flex flex-col items-center gap-2">
+             <div className="px-3 py-1 border border-current rounded text-xs">SPACE</div>
+             <span>Pause</span>
+          </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="mt-8 mb-6 text-center px-4">
+      {/* Footer - Flexbox at bottom */}
+      <div className="mt-auto py-6 text-center w-full">
         <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
           <span>Built by ProductAlchemist</span>
           <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-[#2ECC71] transition-all">

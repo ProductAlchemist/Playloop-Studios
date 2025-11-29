@@ -493,7 +493,7 @@ function App() {
         <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
 
         {/* Footer */}
-        <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+        <div className="pb-safe mb-8 text-center w-full px-4">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span>Built by ProductAlchemist</span>
             <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
@@ -526,7 +526,7 @@ function App() {
                 ))}
             </div>
             {/* Footer */}
-            <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+            <div className="pb-safe mb-8 text-center w-full px-4">
               <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <span>Built by ProductAlchemist</span>
                 <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
@@ -544,33 +544,37 @@ function App() {
 
   if (view === 'ONLINE_MENU') {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+        <div className="min-h-screen flex flex-col p-6">
           <button onClick={() => setView('LANDING')} className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/10"><ArrowLeftIcon /></button>
-          <h2 className="text-3xl font-bold mb-10">Two Player Mode</h2>
 
-          <div className="w-full max-w-md space-y-6">
-            {/* Local - KEEP THIS WORKING */}
-            <div className="glass-panel p-6 rounded-2xl">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><UsersIcon className="w-5 h-5 text-accent"/> Same Device</h3>
-                <div className="space-y-3">
-                    <input value={player1Name} onChange={e => setPlayer1Name(e.target.value)} placeholder="Player 1 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
-                    <input value={player2Name} onChange={e => setPlayer2Name(e.target.value)} placeholder="Player 2 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
-                    <button onClick={() => { setGameMode('LOCAL'); startGame('LOCAL'); }} className="w-full bg-accent text-background font-bold py-3 rounded-lg hover:brightness-110 transition-all">Start Local Game</button>
-                </div>
-            </div>
+          {/* Main Content - Centered */}
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <h2 className="text-3xl font-bold mb-10">Two Player Mode</h2>
 
-            {/* Online - SHOW COMING SOON MODAL */}
-            <div className="glass-panel p-6 rounded-2xl">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><GlobeIcon className="w-5 h-5 text-cyan-400"/> Play Online</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Create Room</button>
-                    <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Join Room</button>
-                </div>
+            <div className="w-full max-w-md space-y-6">
+              {/* Local - KEEP THIS WORKING */}
+              <div className="glass-panel p-6 rounded-2xl">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><UsersIcon className="w-5 h-5 text-accent"/> Same Device</h3>
+                  <div className="space-y-3">
+                      <input value={player1Name} onChange={e => setPlayer1Name(e.target.value)} placeholder="Player 1 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
+                      <input value={player2Name} onChange={e => setPlayer2Name(e.target.value)} placeholder="Player 2 Name" className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" />
+                      <button onClick={() => { setGameMode('LOCAL'); startGame('LOCAL'); }} className="w-full bg-accent text-background font-bold py-3 rounded-lg hover:brightness-110 transition-all">Start Local Game</button>
+                  </div>
+              </div>
+
+              {/* Online - SHOW COMING SOON MODAL */}
+              <div className="glass-panel p-6 rounded-2xl">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><GlobeIcon className="w-5 h-5 text-cyan-400"/> Play Online</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                      <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Create Room</button>
+                      <button onClick={() => setShowComingSoonModal(true)} className="bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-lg transition-all">Join Room</button>
+                  </div>
+              </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="absolute bottom-6 sm:bottom-4 text-center w-full px-4">
+          {/* Footer - Flexbox at bottom */}
+          <div className="mt-auto py-6 text-center w-full">
             <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
               <span>Built by ProductAlchemist</span>
               <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
