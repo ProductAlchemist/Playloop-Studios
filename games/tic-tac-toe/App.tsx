@@ -469,7 +469,7 @@ function App() {
         {/* Games Played Counter - Top Right */}
         {gamesPlayedCount !== null && (
           <div className="absolute top-4 right-2 sm:right-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
-            🎮 <span className="hidden xs:inline">{gamesPlayedCount.toLocaleString()} games</span><span className="xs:hidden">{gamesPlayedCount.toLocaleString()}</span>
+            🎮 <span className="hidden xs:inline">{gamesPlayedCount.toLocaleString()} games played</span><span className="xs:hidden">{gamesPlayedCount.toLocaleString()}</span>
           </div>
         )}
 

@@ -41,7 +41,7 @@
 
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getDatabase, ref, get, set } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBPRHYwXxfzl2hN3jIzRnvM1VqFX0TdEkw",
@@ -56,38 +56,30 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        async function loadStats() {
+        async function loadAndIncrementVisitors() {
             try {
-                // Load tic-tac-toe stats
-                const tttVisitors = await get(ref(db, 'visitorCount'));
-                const tttGames = await get(ref(db, 'gamesPlayed'));
+                // Track landing page visitors only
+                const landingVisitorsRef = ref(db, 'landing_visitorCount');
+                const snapshot = await get(landingVisitorsRef);
+                const currentCount = snapshot.exists() ? snapshot.val() : 0;
+                const newCount = currentCount + 1;
 
-                if (tttVisitors.exists()) {
-                    document.getElementById('ttt-visitors').textContent = tttVisitors.val().toLocaleString();
-                }
-                if (tttGames.exists()) {
-                    document.getElementById('ttt-games').textContent = tttGames.val().toLocaleString();
-                }
-
-                // Load snake stats
-                const snakeVisitors = await get(ref(db, 'snake_visitorCount'));
-                const snakeGames = await get(ref(db, 'snake_gamesPlayed'));
-
-                if (snakeVisitors.exists()) {
-                    document.getElementById('snake-visitors').textContent = snakeVisitors.val().toLocaleString();
-                }
-                if (snakeGames.exists()) {
-                    document.getElementById('snake-games').textContent = snakeGames.val().toLocaleString();
-                }
+                await set(landingVisitorsRef, newCount);
+                document.getElementById('landing-visitors').textContent = newCount.toLocaleString();
             } catch (error) {
-                console.error('Failed to load stats:', error);
+                console.error('Failed to load visitor count:', error);
             }
         }
 
-        window.addEventListener('load', loadStats);
+        window.addEventListener('load', loadAndIncrementVisitors);
     </script>
 </head>
 <body class="flex flex-col min-h-screen">
+    <!-- Visitor Counter - Top Center -->
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 glass-panel px-4 py-2 rounded-full text-sm text-gray-300 z-50">
+        👁️ <span id="landing-visitors">...</span> visitors to PlayLoop Studios
+    </div>
+
     <main class="flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <!-- Header -->
         <div class="text-center mb-12 md:mb-16 animate-fade-in">
@@ -109,18 +101,6 @@
                     </p>
                 </div>
 
-                <!-- Stats -->
-                <div class="flex justify-center gap-6 mb-8 text-sm">
-                    <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
-                        <span class="text-blue-200/60">👥</span>
-                        <span><span id="ttt-visitors">...</span> visitors</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
-                        <span class="text-blue-200/60">🎮</span>
-                        <span><span id="ttt-games">...</span> games</span>
-                    </div>
-                </div>
-
                 <!-- Play Button -->
                 <a href="./games/tic-tac-toe/"
                    class="block w-full bg-gradient-to-r from-[#2ECC71] to-[#27AE60] text-[#0E1B3E] font-bold text-lg py-4 rounded-xl text-center hover:brightness-110 transition-all shadow-lg hover:shadow-[0_0_30px_rgba(46,204,113,0.4)]">
@@ -136,18 +116,6 @@
                     <p class="text-blue-200/70 text-lg mb-6">
                         Classic arcade game • 3 difficulty levels
                     </p>
-                </div>
-
-                <!-- Stats -->
-                <div class="flex justify-center gap-6 mb-8 text-sm">
-                    <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
-                        <span class="text-blue-200/60">👥</span>
-                        <span><span id="snake-visitors">...</span> visitors</span>
-                    </div>
-                    <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full">
-                        <span class="text-blue-200/60">🎮</span>
-                        <span><span id="snake-games">...</span> games</span>
-                    </div>
                 </div>
 
                 <!-- Play Button -->

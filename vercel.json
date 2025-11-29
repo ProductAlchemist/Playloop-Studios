@@ -1,16 +1,7 @@
 {
+  "buildCommand": "echo 'Static site - no build needed'",
+  "outputDirectory": ".",
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/games/tic-tac-toe",
-      "destination": "/games/tic-tac-toe/index.html"
-    },
-    {
-      "source": "/games/snake",
-      "destination": "/games/snake/index.html"
-    }
+    { "source": "/", "destination": "/index.html" }
   ]
 }
