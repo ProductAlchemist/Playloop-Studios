@@ -458,7 +458,7 @@ function App() {
 
   if (view === 'LANDING') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+      <div className="min-h-screen flex flex-col p-6">
         {/* Visitor Counter - Top Left */}
         {visitorCount !== null && (
           <div className="absolute top-4 left-2 sm:left-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
@@ -473,27 +473,30 @@ function App() {
           </div>
         )}
 
-        <div className="text-center mb-12 animate-scale-in">
-          <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 mb-2 drop-shadow-lg">Tic Tac Toe</h1>
-          <p className="text-gray-400 text-sm tracking-widest uppercase">By PlayLoop Studios</p>
+        {/* Main Content - Centered */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="text-center mb-12 animate-scale-in">
+            <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 mb-2 drop-shadow-lg">Tic Tac Toe</h1>
+            <p className="text-gray-400 text-sm tracking-widest uppercase">By PlayLoop Studios</p>
+          </div>
+
+          <div className="w-full max-w-md space-y-4">
+            <button onClick={() => { setView('MODE_SELECT'); setGameMode('SINGLE'); }} className="w-full glass-panel py-5 rounded-2xl flex items-center justify-center space-x-4 hover:bg-white/10 transition-all hover:scale-105 group">
+              <UserIcon className="w-8 h-8 text-accent group-hover:text-white transition-colors" />
+              <span className="text-xl font-semibold">Single Player</span>
+            </button>
+
+            <button onClick={() => setView('ONLINE_MENU')} className="w-full glass-panel py-5 rounded-2xl flex items-center justify-center space-x-4 hover:bg-white/10 transition-all hover:scale-105 group">
+              <UsersIcon className="w-8 h-8 text-cyan-400 group-hover:text-white transition-colors" />
+              <span className="text-xl font-semibold">Two Player</span>
+            </button>
+          </div>
+
+          <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
         </div>
-
-        <div className="w-full max-w-md space-y-4">
-          <button onClick={() => { setView('MODE_SELECT'); setGameMode('SINGLE'); }} className="w-full glass-panel py-5 rounded-2xl flex items-center justify-center space-x-4 hover:bg-white/10 transition-all hover:scale-105 group">
-            <UserIcon className="w-8 h-8 text-accent group-hover:text-white transition-colors" />
-            <span className="text-xl font-semibold">Single Player</span>
-          </button>
-
-          <button onClick={() => setView('ONLINE_MENU')} className="w-full glass-panel py-5 rounded-2xl flex items-center justify-center space-x-4 hover:bg-white/10 transition-all hover:scale-105 group">
-            <UsersIcon className="w-8 h-8 text-cyan-400 group-hover:text-white transition-colors" />
-            <span className="text-xl font-semibold">Two Player</span>
-          </button>
-        </div>
-
-        <p className="mt-8 text-xs text-gray-500">Choose your mode to begin</p>
 
         {/* Footer */}
-        <div className="pb-safe mb-8 text-center w-full px-4">
+        <div className="mt-auto py-6 text-center w-full px-4">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span>Built by ProductAlchemist</span>
             <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
@@ -511,22 +514,27 @@ function App() {
 
   if (view === 'MODE_SELECT' && gameMode === 'SINGLE') {
       return (
-          <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+          <div className="min-h-screen flex flex-col p-6">
             <button onClick={() => setView('LANDING')} className="absolute top-6 left-6 p-2 rounded-full hover:bg-white/10"><ArrowLeftIcon /></button>
-            <h2 className="text-3xl font-bold mb-8">Select Difficulty</h2>
-            <div className="space-y-4 w-full max-w-xs">
-                {(['EASY', 'MEDIUM', 'HARD'] as Difficulty[]).map(diff => (
-                    <button
-                        key={diff}
-                        onClick={() => { handleDifficultyChange(diff); startGame('SINGLE', diff); }}
-                        className={`w-full py-4 rounded-xl border transition-all ${difficulty === diff ? 'bg-accent text-background border-accent font-bold' : 'glass-panel border-white/10 text-gray-300 hover:bg-white/10'}`}
-                    >
-                        {diff}
-                    </button>
-                ))}
+
+            {/* Main Content - Centered */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <h2 className="text-3xl font-bold mb-8">Select Difficulty</h2>
+              <div className="space-y-4 w-full max-w-xs">
+                  {(['EASY', 'MEDIUM', 'HARD'] as Difficulty[]).map(diff => (
+                      <button
+                          key={diff}
+                          onClick={() => { handleDifficultyChange(diff); startGame('SINGLE', diff); }}
+                          className={`w-full py-4 rounded-xl border transition-all ${difficulty === diff ? 'bg-accent text-background border-accent font-bold' : 'glass-panel border-white/10 text-gray-300 hover:bg-white/10'}`}
+                      >
+                          {diff}
+                      </button>
+                  ))}
+              </div>
             </div>
+
             {/* Footer */}
-            <div className="pb-safe mb-8 text-center w-full px-4">
+            <div className="mt-auto py-6 text-center w-full px-4">
               <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
                 <span>Built by ProductAlchemist</span>
                 <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
@@ -665,65 +673,68 @@ function App() {
   // GAME VIEW
   if (view === 'GAME') {
     return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
-        {/* Header */}
-        <div className="w-full max-w-md flex justify-between items-center mb-8">
-            <button onClick={goBack} className="p-2 rounded-full hover:bg-white/10"><ArrowLeftIcon /></button>
-            <div className="text-xl font-bold font-mono bg-black/20 px-4 py-1 rounded-full border border-white/5">
-                {renderStatus()}
-            </div>
-            <button onClick={handleSoundToggle} className="p-2 rounded-full hover:bg-white/10">
-                {soundEnabled ? <Volume2Icon className="text-accent"/> : <VolumeXIcon className="text-gray-500"/>}
-            </button>
-        </div>
+    <div className="min-h-screen flex flex-col p-4 md:p-8">
+        {/* Main Content - Centered */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          {/* Header */}
+          <div className="w-full max-w-md flex justify-between items-center mb-8">
+              <button onClick={goBack} className="p-2 rounded-full hover:bg-white/10"><ArrowLeftIcon /></button>
+              <div className="text-xl font-bold font-mono bg-black/20 px-4 py-1 rounded-full border border-white/5">
+                  {renderStatus()}
+              </div>
+              <button onClick={handleSoundToggle} className="p-2 rounded-full hover:bg-white/10">
+                  {soundEnabled ? <Volume2Icon className="text-accent"/> : <VolumeXIcon className="text-gray-500"/>}
+              </button>
+          </div>
 
-        {/* Board */}
-        <div className="w-full max-w-md aspect-square mb-8">
-             <div className="grid grid-cols-3 gap-3 p-3 glass-panel rounded-2xl h-full">
-                 {board.map((cell, idx) => (
-                     <Square
-                        key={idx}
-                        value={cell}
-                        onClick={() => {
-                          console.log('🖱️ SQUARE CLICKED:', idx, 'Current view:', view, 'Game mode:', gameMode);
-                          handleMove(idx);
-                        }}
-                        disabled={!!cell || !!winner || (gameMode === 'ONLINE' && currentTurn !== mySymbol) || (gameMode === 'SINGLE' && currentTurn === 'O')}
-                        isWinningSquare={winningLine?.includes(idx) ?? false}
-                     />
-                 ))}
-             </div>
-        </div>
+          {/* Board */}
+          <div className="w-full max-w-md aspect-square mb-8">
+               <div className="grid grid-cols-3 gap-3 p-3 glass-panel rounded-2xl h-full">
+                   {board.map((cell, idx) => (
+                       <Square
+                          key={idx}
+                          value={cell}
+                          onClick={() => {
+                            console.log('🖱️ SQUARE CLICKED:', idx, 'Current view:', view, 'Game mode:', gameMode);
+                            handleMove(idx);
+                          }}
+                          disabled={!!cell || !!winner || (gameMode === 'ONLINE' && currentTurn !== mySymbol) || (gameMode === 'SINGLE' && currentTurn === 'O')}
+                          isWinningSquare={winningLine?.includes(idx) ?? false}
+                       />
+                   ))}
+               </div>
+          </div>
 
-        {/* Score & Controls */}
-        <div className="w-full max-w-md space-y-6">
-            <div className="grid grid-cols-3 gap-4 text-center">
-                <div className={`p-3 rounded-xl border ${currentTurn === 'X' ? 'bg-white/10 border-accent' : 'bg-transparent border-white/5'}`}>
-                    <div className="text-xs text-gray-400 uppercase">{player1Name} (X)</div>
-                    <div className="text-2xl font-bold">{score.X}</div>
-                </div>
-                <div className="p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-gray-400 uppercase">Draws</div>
-                    <div className="text-2xl font-bold">{score.Draws}</div>
-                </div>
-                <div className={`p-3 rounded-xl border ${currentTurn === 'O' ? 'bg-white/10 border-white' : 'bg-transparent border-white/5'}`}>
-                    <div className="text-xs text-gray-400 uppercase">{player2Name} (O)</div>
-                    <div className="text-2xl font-bold">{score.O}</div>
-                </div>
-            </div>
+          {/* Score & Controls */}
+          <div className="w-full max-w-md space-y-6">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className={`p-3 rounded-xl border ${currentTurn === 'X' ? 'bg-white/10 border-accent' : 'bg-transparent border-white/5'}`}>
+                      <div className="text-xs text-gray-400 uppercase">{player1Name} (X)</div>
+                      <div className="text-2xl font-bold">{score.X}</div>
+                  </div>
+                  <div className="p-3 rounded-xl border border-white/5">
+                      <div className="text-xs text-gray-400 uppercase">Draws</div>
+                      <div className="text-2xl font-bold">{score.Draws}</div>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${currentTurn === 'O' ? 'bg-white/10 border-white' : 'bg-transparent border-white/5'}`}>
+                      <div className="text-xs text-gray-400 uppercase">{player2Name} (O)</div>
+                      <div className="text-2xl font-bold">{score.O}</div>
+                  </div>
+              </div>
 
-            {winner && (
-                <button
-                    onClick={handlePlayAgain}
-                    className="w-full py-4 bg-accent text-background font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(46,204,113,0.4)] animate-pulse-slow hover:scale-[1.02] transition-transform"
-                >
-                    Play Again
-                </button>
-            )}
+              {winner && (
+                  <button
+                      onClick={handlePlayAgain}
+                      className="w-full py-4 bg-accent text-background font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(46,204,113,0.4)] animate-pulse-slow hover:scale-[1.02] transition-transform"
+                  >
+                      Play Again
+                  </button>
+              )}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-8 mb-6 text-center px-4">
+        <div className="mt-auto py-6 text-center w-full px-4">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span>Built by ProductAlchemist</span>
             <a href="https://github.com/ProductAlchemist" target="_blank" rel="noopener noreferrer" className="hover:scale-110 hover:text-accent transition-all">
