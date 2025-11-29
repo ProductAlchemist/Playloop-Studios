@@ -462,14 +462,14 @@ function App() {
         {/* Visitor Counter - Top Left */}
         {visitorCount !== null && (
           <div className="absolute top-4 left-2 sm:left-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
-            👥 <span className="hidden xs:inline">{visitorCount.toLocaleString()} visitors</span><span className="xs:hidden">{visitorCount.toLocaleString()}</span>
+            👥 {visitorCount.toLocaleString()} visitors
           </div>
         )}
 
         {/* Games Played Counter - Top Right */}
         {gamesPlayedCount !== null && (
           <div className="absolute top-4 right-2 sm:right-4 glass-panel px-2 sm:px-3 py-1.5 rounded-full text-xs text-gray-300">
-            🎮 <span className="hidden xs:inline">{gamesPlayedCount.toLocaleString()} games played</span><span className="xs:hidden">{gamesPlayedCount.toLocaleString()}</span>
+            🎮 {gamesPlayedCount.toLocaleString()} games played
           </div>
         )}
 
