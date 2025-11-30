@@ -8,7 +8,9 @@
   ],
   "routes": [
     { "src": "/", "dest": "/index.html" },
-    { "src": "/games/tic-tac-toe/(.*)", "dest": "/games/tic-tac-toe/$1" },
-    { "src": "/games/snake/(.*)", "dest": "/games/snake/$1" }
+    { "src": "/games/tic-tac-toe/?", "dest": "/games/tic-tac-toe/dist/index.html" },
+    { "src": "/games/tic-tac-toe/(.*)", "dest": "/games/tic-tac-toe/dist/$1" },
+    { "src": "/games/snake/?", "dest": "/games/snake/dist/index.html" },
+    { "src": "/games/snake/(.*)", "dest": "/games/snake/dist/$1" }
   ]
 }
