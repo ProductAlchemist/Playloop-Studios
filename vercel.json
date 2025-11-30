@@ -1,11 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
     { "src": "/", "dest": "/index.html" },
     { "src": "/games/tic-tac-toe/?", "dest": "/games/tic-tac-toe/dist/index.html" },
